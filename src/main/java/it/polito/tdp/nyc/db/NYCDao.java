@@ -6,7 +6,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.naming.spi.DirStateFactory.Result;
+
+import com.javadocmd.simplelatlng.LatLng;
+
 import it.polito.tdp.nyc.model.Hotspot;
+import it.polito.tdp.nyc.model.Location;
 
 public class NYCDao {
 	
@@ -33,6 +39,62 @@ public class NYCDao {
 			throw new RuntimeException("SQL Error");
 		}
 
+		return result;
+	}
+	
+	
+	//provider
+	public List<String> getProvider() {
+		
+		String sql = "SELECT DISTINCT Provider "
+				+ "FROM nyc_wifi_hotspot_locations "
+				+ "ORDER BY provider";
+		
+		List<String> result = new ArrayList<>();
+		Connection conn = DBConnect.getConnection();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet res = st.executeQuery();
+			while(res.next()) {
+				result.add(res.getString("Provider"));
+			}
+			
+			conn.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		
+		return result;
+		
+	}
+	
+	public List<Location> getVertici(String provider) {
+		
+		String sql = "SELECT DISTINCT(Location), AVG(Latitude) AS LAT, AVG(Longitude) AS LOG "
+				+ "FROM nyc_wifi_hotspot_locations "
+				+ "WHERE Provider = ? "
+				+"GROUP BY Location "
+				+ "ORDER BY location";
+		
+		List<Location> result = new ArrayList<>();
+		Connection conn = DBConnect.getConnection();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, provider);
+			ResultSet res = st.executeQuery();
+			while (res.next()) {
+				result.add(new Location(res.getString("Location"), new LatLng(res.getDouble("LAT"), res.getDouble("LOG"))));
+			}
+			conn.close();
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		
 		return result;
 	}
 	

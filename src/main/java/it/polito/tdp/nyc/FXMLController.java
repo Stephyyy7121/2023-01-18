@@ -5,7 +5,10 @@
 package it.polito.tdp.nyc;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
+
+import it.polito.tdp.nyc.model.Location;
 import it.polito.tdp.nyc.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -34,7 +37,7 @@ public class FXMLController {
     private Button btnPercorso; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbProvider"
-    private ComboBox<?> cmbProvider; // Value injected by FXMLLoader
+    private ComboBox<String> cmbProvider; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtDistanza"
     private TextField txtDistanza; // Value injected by FXMLLoader
@@ -46,20 +49,82 @@ public class FXMLController {
     private TextField txtStringa; // Value injected by FXMLLoader
     
     @FXML // fx:id="txtTarget"
-    private ComboBox<?> txtTarget; // Value injected by FXMLLoader
+    private ComboBox<Location> txtTarget; // Value injected by FXMLLoader
 
+    private boolean creaGrafo = false;
+    
     @FXML
     void doAnalisiGrafo(ActionEvent event) {
     	
+    	if (!creaGrafo) {
+    		txtResult.appendText("Grafo non creato");
+    	}
+    	txtResult.appendText("\nVertici con più vicini: \n");
+    	for (Location l : this.model.maxNumVicini().keySet()) {
+    		txtResult.appendText(l.toString()+", #"+this.model.maxNumVicini().get(l)+"\n");
+    	}
     }
 
     @FXML
     void doCalcolaPercorso(ActionEvent event) {
     	
+    	txtResult.clear();
+    	Location target = this.txtTarget.getValue();
+    	if (target == null) {
+    		txtResult.appendText("Inserire un valore\n");
+    	}
+    	String s  = this.txtStringa.getText();
+    	if (s.compareTo("")==0) {
+    		txtResult.appendText("Inserire una stringa\n");
+    	}
+    	if (!this.creaGrafo) {
+    		txtResult.appendText("Non è stato creato un grafo\n");
+    	}
+    	if (target.getName().toLowerCase().contains(s.toLowerCase())) {
+    		txtResult.appendText("Non e' possobile trovare un percorso");
+    	}
+    	else {
+    		List<Location> percorso = this.model.calcolaPercorso(target, s);
+        	if (percorso.isEmpty()) {
+        		txtResult.appendText("Non e' stato trovato un percorso\n");
+        	}
+        	else {
+        		txtResult.appendText("Trovato percorso tra " + this.model.getSource() + " - " + target + ": \n");
+        		for (Location l : percorso) {
+        		txtResult.appendText(l.toString()+"\n");
+        		}
+        	}
+    		
+    	}
+    	
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	
+    	txtResult.clear();
+    	String input = txtDistanza.getText();
+    	String provider = cmbProvider.getValue();
+    	
+    	if (provider == null) {
+    		txtResult.setText("Inserire valore");
+    	}
+    	if (input=="") {
+    		txtResult.appendText("Inserire distanza");
+    	}
+    	
+    	double distanza = 0.0;
+    	try {
+    		distanza = Double.parseDouble(input);
+    	}catch (NumberFormatException e) {
+    		txtResult.appendText("Valore inserito non accettabile");
+    		return;
+    	}
+    	
+    	this.model.creaGrafo(distanza, provider);
+    	this.creaGrafo = true;
+    	txtResult.appendText("Grafo creato! \n#Vertici: "+this.model.getNumVartici() + "\n#Archi: "+ this.model.getNumArchi()+"\n");
+    	this.txtTarget.getItems().addAll(this.model.getVertici());
     	
     }
 
@@ -77,5 +142,7 @@ public class FXMLController {
 
     public void setModel(Model model) {
     	this.model = model;
+    	this.cmbProvider.getItems().addAll(this.model.getProvider());
     }
+    
 }
